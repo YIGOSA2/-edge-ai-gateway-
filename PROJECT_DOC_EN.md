@@ -1,19 +1,21 @@
 # Edge AI Gateway — Technical Documentation
 
+[中文](PROJECT_DOC.md)
+
 ## Overview
 
 A multi-sensor data acquisition system built on the RK3506 embedded Linux development board. It uses a local AI model for real-time anomaly detection, combined with MQTT cloud reporting and a web dashboard, to implement a complete edge intelligent gateway.
 
 ## Hardware Platform
 
-| Component                 | Model / Configuration              |
-| ------------------------- | ---------------------------------- |
-| Development Board         | RK3506EVM                          |
-| Temperature & Humidity    | AHT30 (I2C, 0x38)                  |
-| Accelerometer             | MPU6500 (I2C, 0x68)                |
-| Development Host          | Ubuntu 22.04                       |
+| Component                   | Model / Configuration             |
+| --------------------------- | --------------------------------- |
+| Development Board           | RK3506EVM                         |
+| Temperature & Humidity      | AHT30 (I2C, 0x38)                 |
+| Accelerometer               | MPU6500 (I2C, 0x68)               |
+| Development Host            | Ubuntu 22.04                      |
 | Cross-compilation Toolchain | arm-buildroot-linux-gnueabihf-gcc |
-| Cloud Server              | MQTT Broker (mosquitto 2.0.11)     |
+| Cloud Server                | MQTT Broker (mosquitto 2.0.11)    |
 
 ## System Architecture
 
