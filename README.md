@@ -87,6 +87,7 @@ edge-ai-gateway/
 - **交叉编译工具链**：`arm-buildroot-linux-gnueabihf-gcc`（Buildroot SDK）
 - **目标板依赖**：`libpthread`、`libsqlite3`、`mosquitto_pub`
 - **Python 训练环境**：`numpy`、`pandas`、`scikit-learn`
+  注：本次项目中使用的是开发板的i2c1结点。
 
 ### 编译与部署
 
