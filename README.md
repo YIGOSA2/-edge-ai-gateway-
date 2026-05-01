@@ -105,10 +105,10 @@ make deploy
 # 在板子上运行
 ./gateway
 
-# 优雅退出 (Ctrl+C)
+# 退出 (Ctrl+C)
 ```
 
-### AI 模型训练（可选）
+### AI 模型训练
 
 ```bash
 cd ai
@@ -161,13 +161,3 @@ python3 train_model.py
 - **Topic**：`edge-gateway/sensor`
 - **QoS**：1
 - **上报间隔**：5 秒
-
-## 开发教程
-
-项目附带 5 篇分步教程，从零搭建整个系统：
-
-1. [I2C 环境验证与传感器接线](01-i2c-setup.md)
-2. [C 语言读取传感器数据](02-sensor-reading.md)
-3. [多线程采集框架与 SQLite 存储](03-multithread-storage.md)
-4. [数据采集、模型训练与板上推理](04-ai-model.md)
-5. [MQTT 上报与 Web 看板](05-mqtt-web.md)
