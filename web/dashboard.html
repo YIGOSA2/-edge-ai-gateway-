@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edge AI Gateway</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, "Microsoft YaHei", sans-serif;
+            background: #0f1923;
+            color: #e0e0e0;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 { text-align: center; color: #00d4ff; font-size: 28px; margin-bottom: 5px; }
+        .sub { text-align: center; color: #666; font-size: 13px; margin-bottom: 20px; }
+
+        .status-bar {
+            text-align: center;
+            padding: 14px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 22px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .status-normal { background: #1b3a1b; border: 2px solid #4caf50; }
+        .status-anomaly { background: #3a1b1b; border: 2px solid #f44336; animation: blink 0.5s infinite; }
+        .status-offline { background: #3a3a1b; border: 2px solid #ff9800; }
+        @keyframes blink { 50% { opacity: 0.6; } }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .card {
+            background: #1a2634;
+            border-radius: 10px;
+            padding: 18px;
+            text-align: center;
+            border: 1px solid #2a3a4a;
+        }
+        .card .label { font-size: 13px; color: #888; }
+        .card .value { font-size: 30px; font-weight: bold; margin: 8px 0; color: #00d4ff; }
+        .card .unit { font-size: 13px; color: #666; }
+
+        .section {
+            background: #1a2634;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #2a3a4a;
+        }
+        .section h3 { margin: 0 0 10px 0; color: #00d4ff; font-size: 15px; }
+        #log {
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+            line-height: 1.8;
+        }
+        #log div { padding: 2px 0; border-bottom: 1px solid #0f1923; }
+        .log-normal { color: #4caf50; }
+        .log-anomaly { color: #f44336; font-weight: bold; }
+
+        .conn-info {
+            text-align: center;
+            font-size: 12px;
+            color: #555;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Edge AI Gateway</h1>
+    <div class="sub">RK3506 | AHT30 + MPU6050 | Real-time Monitoring</div>
+
+    <div id="statusBar" class="status-bar status-offline">
+        Connecting...
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <div class="label">Temperature</div>
+            <div class="value" id="temp">--</div>
+            <div class="unit">&deg;C</div>
+        </div>
+        <div class="card">
+            <div class="label">Humidity</div>
+            <div class="value" id="humi">--</div>
+            <div class="unit">%</div>
+        </div>
+        <div class="card">
+            <div class="label">Vibration X</div>
+            <div class="value" id="vibX">--</div>
+            <div class="unit">raw</div>
+        </div>
+        <div class="card">
+            <div class="label">Vibration Y</div>
+            <div class="value" id="vibY">--</div>
+            <div class="unit">raw</div>
+        </div>
+        <div class="card">
+            <div class="label">Vibration Z</div>
+            <div class="value" id="vibZ">--</div>
+            <div class="unit">raw</div>
+        </div>
+        <div class="card">
+            <div class="label">Update Interval</div>
+            <div class="value" id="interval">--</div>
+            <div class="unit">sec</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Event Log</h3>
+        <div id="log"></div>
+    </div>
+
+    <div class="conn-info" id="connInfo">--</div>
+
+    <script>
+        // ====== MQTT Configuration ======
+        var BROKER = "your-mqtt-broker-ip";
+        var WS_PORT = 9001;
+        var TOPIC = "edge-gateway/sensor";
+
+        var client;
+        var lastTimestamp = 0;
+        var msgCount = 0;
+
+        function onConnect() {
+            document.getElementById("connInfo").textContent =
+                "Connected to " + BROKER + ":" + WS_PORT;
+            document.getElementById("statusBar").className = "status-bar status-normal";
+            document.getElementById("statusBar").textContent = "System Status: Online";
+            client.subscribe(TOPIC);
+        }
+
+        function onMessageArrived(message) {
+            var data = JSON.parse(message.payloadString);
+            msgCount++;
+
+            document.getElementById("temp").textContent = data.temp.toFixed(1);
+            document.getElementById("humi").textContent = data.humi.toFixed(1);
+            document.getElementById("vibX").textContent = data.vib_x;
+            document.getElementById("vibY").textContent = data.vib_y;
+            document.getElementById("vibZ").textContent = data.vib_z;
+
+            if (lastTimestamp > 0) {
+                var interval = ((data.timestamp - lastTimestamp) / 1000).toFixed(1);
+                document.getElementById("interval").textContent = interval;
+            }
+            lastTimestamp = data.timestamp;
+
+            var bar = document.getElementById("statusBar");
+            if (data.ai_status === 0) {
+                bar.className = "status-bar status-normal";
+                bar.textContent = "System Status: Normal";
+            } else {
+                bar.className = "status-bar status-anomaly";
+                bar.textContent = "!! Anomaly Detected !!";
+            }
+
+            var logDiv = document.getElementById("log");
+            var entry = document.createElement("div");
+            var time = new Date().toLocaleTimeString();
+            var cls = data.ai_status === 0 ? "log-normal" : "log-anomaly";
+            entry.className = cls;
+            entry.textContent = "[" + time + "] T:" + data.temp +
+                "°C H:" + data.humi + "% X:" + data.vib_x +
+                " Y:" + data.vib_y + " Z:" + data.vib_z +
+                " [" + data.ai_label + "]";
+            logDiv.insertBefore(entry, logDiv.firstChild);
+
+            while (logDiv.children.length > 100) {
+                logDiv.removeChild(logDiv.lastChild);
+            }
+        }
+
+        function onFailure(error) {
+            document.getElementById("statusBar").className = "status-bar status-offline";
+            document.getElementById("statusBar").textContent = "Connection Lost - Retrying...";
+            document.getElementById("connInfo").textContent = "MQTT connection failed: " + error.errorMessage;
+            setTimeout(connect, 5000);
+        }
+
+        function onConnectionLost(response) {
+            document.getElementById("statusBar").className = "status-bar status-offline";
+            document.getElementById("statusBar").textContent = "Connection Lost - Retrying...";
+            setTimeout(connect, 3000);
+        }
+
+        function connect() {
+            client = new Paho.MQTT.Client(BROKER, WS_PORT, "web-dashboard-" + Math.random().toString(36).substr(2, 6));
+            client.onMessageArrived = onMessageArrived;
+            client.onConnectionLost = onConnectionLost;
+            client.connect({
+                onSuccess: onConnect,
+                onFailure: onFailure,
+                timeout: 5
+            });
+        }
+
+        connect();
+    </script>
+</body>
+</html>
